@@ -21,6 +21,25 @@ public class SecurityService(
 
     public async Task<User> CreateUser(string username, string password)
     {
+        //exceptions
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new ArgumentException("Username cannot be null or empty.", nameof(username));
+        }
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new ArgumentException("Password cannot be null or empty.", nameof(password));
+        //makes sure the username is a character or digit and not some emoji
+        }
+        if (username.Any(ch => !char.IsLetterOrDigit(ch)))
+        {
+            throw new ArgumentException("Username can only contain letters and digits.", nameof(username));
+        }
+        //password length - makes sure they don't throw in a weak password
+        if (password.Length < 6)
+        {
+            throw new ArgumentException("Password must be at least 6 characters long.", nameof(password));
+        }
         var user = new User { UserName = username, Email = username };
         try
         {
