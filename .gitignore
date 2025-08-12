@@ -1,0 +1,38 @@
+
+# ASP.NET / .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vs/
+*.dbmdl
+*.pdb
+*.mdb
+*.cache
+*.config
+*.psess
+*.vsp
+*.vspscc
+*.vssscc
+TestResults/
+build/
+out/
+*.dll
+*.exe
+*.app
+*.lib
+*.nupkg
+*.snupkg
+*.deps.json
+*.runtimeconfig.json
+*.lock.json
+
+# Environment and database
+.env
+*.sqlite
+*.db
+
+# IDEs
+.vscode
