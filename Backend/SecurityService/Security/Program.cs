@@ -7,10 +7,23 @@ using Security.Service;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
+try
+{
+    builder.Services.AddDbContextFactory<SecurityContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+    );
+}catch
+{
+    Console.WriteLine($"Fail to connect to database.");
+    throw;
+}
 
-builder.Services.AddDbContextFactory<SecurityContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
+builder.Services.AddLogging(config =>
+{
+    config.AddConsole();
+    config.AddDebug();
+});
+
 
 builder.Services.AddIdentityCore<User>()
     .AddRoles<Role>()
@@ -49,27 +62,26 @@ builder.Services.AddHttpClient("PaymentService", client =>
 });
 
 builder.Services.AddControllers();
-
 var app = builder.Build();
 
-// Custom middleware to forward authentication to downstream services
-app.Use(async (context, next) =>
+// Apply migrations with error handling
+try
 {
-    if (context.Request.Path.StartsWithSegments("/graphql"))
-    {
-        // Extract user info and add to headers for downstream services
-        if (context.User.Identity?.IsAuthenticated == true)
-        {
-            var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userRoles = string.Join(",", context.User.FindAll(ClaimTypes.Role).Select(c => c.Value));
-            
-            context.Request.Headers["X-User-Id"] = userId;
-            context.Request.Headers["X-User-Roles"] = userRoles;
-        }
-    }
-    
-    await next();
-});
+    var context = app.Services.GetRequiredService<IDbContextFactory<SecurityContext>>().CreateDbContext();
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+    logger.LogInformation("Applying database migrations...");
+    context.Database.Migrate();
+    logger.LogInformation("Database migrations applied successfully.");
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An error occurred while applying migrations.");
+    throw; // Re-throw to prevent startup if migrations fail
+}
+
+
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

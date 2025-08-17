@@ -1,10 +1,13 @@
 namespace Security;
 
 using Data.Model;
+using Security.Asset;
+using Security.Service;
 
 public interface ISecurityService
 {
-    Task<User> CreateUser(string username, string password);
+    //CRUD USER
+    Task<SecurityService.UserRegistrationResult> CreateUser(string username, string password);
     //Task<bool> DeleteUser(string userId);
     Task<List<User>> GetAllUsers();
     Task<User?> GetUserById(string userId);

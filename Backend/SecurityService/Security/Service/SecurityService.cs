@@ -5,37 +5,50 @@ using Security;
 using Security.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
+using Security.Asset;
+
 
 public class SecurityService(
+        ILogger<SecurityService> logger,
         IDbContextFactory<SecurityContext> dbContextFactory,
         UserManager<User> userManager,
         SignInManager<User> signInManager,
         RoleManager<Role> roleManager
     ) : ISecurityService
 {
+    private readonly ILogger<SecurityService> _logger = logger;
     private readonly SecurityContext _context = dbContextFactory.CreateDbContext();
     private readonly UserManager<User> _userManager = userManager;
     private readonly SignInManager<User> _signInManager = signInManager;
     private readonly RoleManager<Role> _roleManager = roleManager;
 
-    public async Task<User> CreateUser(string username, string password)
+    public record UserRegistrationResult(bool Succeeded, User? User, string? Message);
+    public async Task<UserRegistrationResult> CreateUser(string username, string password)
     {
-        var user = new User { UserName = username, Email = username };
+
         try
         {
+            var user = new User { UserName = username, Email = username };
             var result = await _userManager.CreateAsync(user, password);
 
             if (result.Succeeded)
             {
-                return user;
+                var RegisteredUser = await _userManager.FindByNameAsync(username);
+                return new UserRegistrationResult(true, RegisteredUser, null);
+            }
+            else
+            {
+                _logger.LogWarning("Creation Failed. Reason: {errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+
+                return new UserRegistrationResult(false, null,
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
             }
 
-            throw new InvalidOperationException($"Failed to create user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"An error occurred while creating user: {ex.Message}");
+            _logger.LogError("An fatal error occurred while creating user: {message}", ex.Message);
+            throw new InvalidOperationException($"A fatal error occurred while creating user: {ex.Message}");
         }
     }
 
@@ -51,7 +64,22 @@ public class SecurityService(
 
     public async Task<User?> Login(string username, string password)
     {
-
+        
+#if DEBUG
+        // Create a test user
+        // This code only runs in debug builds
+        if (username == "admin" && password == "Admin@123")
+        {
+            var admin = new User { UserName = "admin", Email = "admin@example.com" };
+            if ((await _userManager.FindByNameAsync(admin.UserName)) == null)
+            {
+                await _userManager.CreateAsync(admin, "Admin@123");
+                await _signInManager.SignInAsync(admin, isPersistent: false);
+                return admin;
+            }
+        }
+        
+#endif
         var user = await _userManager.FindByNameAsync(username);
         if (user != null && await _userManager.CheckPasswordAsync(user, password))
         {
@@ -119,7 +147,7 @@ public class SecurityService(
             throw new InvalidOperationException("User or role not found.");
         }
 
-        var result = await _userManager.AddToRoleAsync(user, role.Name);
+        var result = await _userManager.AddToRoleAsync(user, role.Name!);
         if (!result.Succeeded)
         {
             throw new InvalidOperationException(

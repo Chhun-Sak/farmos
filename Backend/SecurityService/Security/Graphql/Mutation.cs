@@ -3,6 +3,7 @@ using Security.Service;
 using HotChocolate.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using Security.Asset;
 
 namespace Security.Graphql;
 
@@ -23,12 +24,17 @@ public class Mutation
             {
                 return new AuthPayload(false,null, "Username already exists");
             }
-            var user = await securityService.CreateUser(username, password);
-            return new AuthPayload(true,user, "User created successfully");
+            var userRegistrationResult = await securityService.CreateUser(username, password);
+            var user = userRegistrationResult.User;
+            if (!userRegistrationResult.Succeeded)
+            {
+                return new AuthPayload(false, null, userRegistrationResult.Message!);
+            }
+            return new AuthPayload(true, user, "User created successfully");
         }
         catch (Exception ex)
         {
-            return new AuthPayload(false,null, ex.Message);
+            return new AuthPayload(false, null, ex.Message);
         }
     }
 
@@ -42,7 +48,6 @@ public class Mutation
     {
         try
         {
-            
             var user = await securityService.Login(username, password);
             if(user == null)
             {
@@ -78,14 +83,23 @@ public class Mutation
             return false;
         }
     }
+
     [Authorize]
     public async Task<RolePayload> CreateRole(
         [Service] ISecurityService securityService,
         string roleName
     )
     {
-        var role = await securityService.CreateRole(roleName);
-        return new RolePayload(true, role, "Role created successfully");
+        try
+        {
+            var role = await securityService.CreateRole(roleName);
+            return new RolePayload(true, role, "Role created successfully");
+        }
+        catch (Exception ex)
+        {
+            return new RolePayload(false, null, ex.Message);
+        }
+        
     }
     [Authorize]
     public async Task<bool> AssignRole(
