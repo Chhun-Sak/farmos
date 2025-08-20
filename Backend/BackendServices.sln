@@ -7,9 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecurityService", "..\Backe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryService", "..\Backend\InventoryService\Inventory\InventoryService.csproj", "{DA3CECBC-3AB4-492C-B916-73D6F34A123E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ListingService", "ListingService", "{618DA5B3-1BB6-7303-AE10-E533F6F30689}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListingService", "ListingService\ListingService\ListingService.csproj", "{A2D5A609-79C2-4940-AB15-75DAEE97A5E9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListingService", "..\Backend\ListingService\Listing\ListingService.csproj", "{A2D5A609-79C2-4940-AB15-75DAEE97A5E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
